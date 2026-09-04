@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forward Signals — V1</title>
+<style>
+:root{
+  --ink:#251f17; --paper:#e8ddbd; --paper2:#d7c79d; --wood:#37291d; --wood2:#201810;
+  --metal:#55584f; --metal2:#2f322d; --cream:#eadfbf; --red:#7a2823; --green:#54634b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#15120f;color:#eee;font-family:Georgia,serif;min-width:0;overflow-x:hidden}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+#game{width:min(1180px,calc(100% - 20px));min-height:700px;margin:10px auto;background:linear-gradient(#3e3023,#241b14);border:1px solid #675440;box-shadow:0 22px 60px #0008;position:relative;overflow:hidden}
+.topbar{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;background:#191713;border-bottom:1px solid #4b4337;font-family:Arial,sans-serif;flex-wrap:wrap}
+.topbar .status{font-size:13px;color:#c8c0ae}.topbar button{background:#302b24;color:#ddd;border:1px solid #5f5547;padding:10px 13px;min-height:44px;border-radius:5px}
+.scene{height:712px;position:relative;background:
+radial-gradient(circle at 24% 18%,#8b764022 0 15%,transparent 35%),
+linear-gradient(#4a3a2a 0 14%,#35291d 14% 100%)}
+.tentline{position:absolute;left:0;right:0;top:92px;height:4px;background:#1b1510;opacity:.65}
+.desk{position:absolute;left:70px;right:70px;bottom:55px;height:390px;background:linear-gradient(12deg,#4b341f,#2d2117 55%,#4a3320);border-top:12px solid #5c4129;box-shadow:inset 0 15px 30px #0004}
+.object{position:absolute;border:none;background:none;color:inherit}
+.object:hover .label{opacity:1}.label{position:absolute;background:#17130fdd;color:#f5ead0;font-family:Arial,sans-serif;font-size:13px;padding:6px 8px;border-radius:4px;opacity:.15;white-space:nowrap}
+.book{left:110px;top:86px;width:300px;height:210px;background:linear-gradient(135deg,#876d42,#594527);border:9px solid #4a391f;transform:rotate(-3deg);box-shadow:6px 9px 10px #0006}
+.book:before{content:"COMMUNICATION\A LOG";white-space:pre;position:absolute;inset:30px 34px;border:2px solid #c6b071;color:#d6c392;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.8;font-weight:bold;letter-spacing:2px}
+.book .label{left:78px;bottom:-34px}
+.morsebox{right:105px;top:93px;width:350px;height:220px;background:linear-gradient(#5e6258,#2f332e);border:7px solid #22251f;box-shadow:6px 8px 12px #0007}
+.morsebox:before{content:"FIELD KEY";position:absolute;top:10px;left:14px;font:12px Arial;color:#d8d8cf;letter-spacing:2px}
+.keybase{position:absolute;left:44px;bottom:34px;width:255px;height:35px;background:#181a17;border:2px solid #858878;border-radius:8px}
+.keyarm{position:absolute;left:70px;bottom:74px;width:200px;height:18px;background:#7c7f74;border:2px solid #b9bcae;border-radius:9px;transform-origin:15% 50%;transition:.05s}
+.keyknob{position:absolute;right:-24px;top:-17px;width:52px;height:52px;border-radius:50%;background:#111;border:4px solid #74766d}
+.morsebox.pressed .keyarm{transform:rotate(5deg)}
+.morsebox .label{left:100px;bottom:-35px}
+.receiver{left:455px;top:130px;width:205px;height:135px;background:linear-gradient(#5a4b35,#2c251d);border:6px solid #231e18;box-shadow:5px 7px 10px #0007}
+.receiver:before{content:"SIGNAL RECEIVER";position:absolute;top:10px;left:16px;font:11px Arial;color:#d9cab1;letter-spacing:1.5px}
+.receiver .dial{position:absolute;width:52px;height:52px;border-radius:50%;border:4px solid #98907b;background:#27251f;left:20px;bottom:18px}
+.receiver .lamp{position:absolute;width:18px;height:18px;border-radius:50%;background:#2a271b;border:2px solid #9a916f;right:26px;bottom:34px}
+.receiver.active .lamp{background:#d9b94f;box-shadow:0 0 18px #e2c65c}
+.receiver .label{left:45px;bottom:-34px}
+.mapobj{left:250px;top:302px;width:430px;height:64px;background:#bfb18a;border:3px solid #756b51;transform:rotate(1deg);box-shadow:3px 5px 8px #0006}
+.mapobj:before{content:"SECTOR MAP — 1 GRID = 100 YARDS";position:absolute;left:20px;top:20px;color:#403b2e;font:bold 13px Arial;letter-spacing:1px}
+.mapobj .label{left:150px;bottom:-34px}
+.paperstack{left:720px;top:315px;width:260px;height:56px;background:#d9cfad;border:1px solid #9c9276;transform:rotate(-2deg);box-shadow:4px 5px #baae8f,8px 10px #9f9378}
+.paperstack:before{content:"MESSAGE PAD";position:absolute;left:18px;top:18px;color:#41392d;font:bold 13px Arial;letter-spacing:1.5px}
+.paperstack .label{left:70px;bottom:-35px}
+.object.locked{filter:grayscale(.5) brightness(.7)}
+.object.locked:hover .label{opacity:.8}
+.objective{position:absolute;left:80px;top:30px;width:560px;background:#17130fdd;border:1px solid #665847;padding:13px 16px;font:14px Arial;color:#e8dfcc}
+.toast{position:absolute;right:80px;top:30px;width:390px;background:#17130fee;border:1px solid #665847;padding:12px 15px;font:13px Arial;color:#e8dfcc;display:none}
+.modalShade{position:absolute;inset:0;background:#080706c9;display:none;align-items:center;justify-content:center;z-index:20}
+.modal{width:min(930px,94%);max-height:88%;overflow:auto;background:#e6dab8;color:#2a241b;border:8px solid #7d6b47;box-shadow:0 20px 60px #000a;padding:28px;position:relative}
+.modal.dark{background:#292b27;color:#eee;border-color:#66685f;font-family:Arial,sans-serif}
+.close{position:absolute;right:14px;top:12px;background:#2c281f;color:#eee;border:1px solid #5e5647;border-radius:4px;padding:9px 12px;min-width:44px;min-height:44px;z-index:2}
+.paperTitle{text-align:center;border-top:2px solid #625b49;border-bottom:2px solid #625b49;padding:14px;margin:6px 0 22px;letter-spacing:3px}
+.logGrid{display:grid;grid-template-columns:1.2fr .8fr;gap:22px}.note{border:1px solid #9c8e68;background:#efe5c8;padding:17px;line-height:1.5}
+.directory{width:100%;border-collapse:collapse}.directory td,.directory th{border-bottom:1px solid #a69974;padding:8px;text-align:left}
+.morseRef{columns:5;column-gap:22px;font-family:Consolas,monospace;font-size:14px;line-height:1.8}
+.transmitWrap{display:grid;grid-template-columns:1fr 330px;gap:18px}
+.txSide{display:flex;flex-direction:column;gap:12px}
+.txReference{display:none;background:#e6dab8;color:#2a241b;border:1px solid #8f805d;padding:14px;max-height:455px;overflow:auto}
+.txReference.open{display:block}
+.txReference .morseMini{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 14px;font:13px Consolas,monospace;line-height:1.5}
+.txReference .stationMini{width:100%;border-collapse:collapse;margin-bottom:12px}
+.txReference .stationMini td,.txReference .stationMini th{border-bottom:1px solid #aa9c77;padding:5px;text-align:left;font-size:13px}
+.rxLayout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.rxSide{display:flex;flex-direction:column;gap:12px;position:sticky;top:8px;align-self:start}
+.rxReference{display:none;background:#e6dab8;color:#2a241b;border:1px solid #8f805d;padding:14px;max-height:520px;overflow:auto}
+.rxReference.open{display:block}
+.rxReference .morseMini{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 14px;font:13px Consolas,monospace;line-height:1.5}
+.rxReference .stationMini{width:100%;border-collapse:collapse;margin-bottom:12px}
+.rxReference .stationMini td,.rxReference .stationMini th{border-bottom:1px solid #aa9c77;padding:5px;text-align:left;font-size:13px}
+.rxBookButton{width:100%;padding:10px 12px;min-height:44px;background:#4a4430;color:#fff;border:1px solid #77705a;border-radius:4px}
+.fieldNote{display:none;background:#eadfbf;color:#29231a;border:1px solid #9b8960;padding:14px 15px;transform:rotate(-1.2deg);box-shadow:2px 3px 0 #0002;font-family:"Segoe Print","Comic Sans MS",cursive}
+.fieldNote.show{display:block}
+.fieldNote .noteHead{font:11px Arial,sans-serif;letter-spacing:1.4px;color:#675c43;border-bottom:1px solid #aa9a73;padding-bottom:5px;margin-bottom:8px}
+.fieldNote .noteMain{font-size:19px;line-height:1.45}
+.fieldNote .noteSend{margin-top:9px;border-top:1px solid #aa9a73;padding-top:8px;font:bold 20px Consolas,monospace;letter-spacing:1px}
+.txReplyBox{min-height:72px;background:#17130f;border:1px solid #6f644f;padding:12px 14px;color:#e8dfcc;font:14px Arial,sans-serif}
+.txReplyBox strong{color:#fff3cf}
+.txReplyBox .success{color:#d6d19c}
+.txReplyBox .error{color:#efb0a8}
+.txReplyBox .small{color:#cdbf9e}
+
+
+
+.txBookButton{width:100%;padding:10px 12px;background:#4a4430;color:#fff;border:1px solid #77705a;border-radius:4px}
+.transmitterPanel{background:#383b35;border:1px solid #71756d;padding:18px;border-radius:6px}
+.signalWindow{min-height:74px;background:#141612;color:#e8e5d2;border:1px solid #666b61;padding:12px;font:20px Consolas,monospace;letter-spacing:2px;word-break:break-word}
+.bigKey{height:170px;margin-top:16px;position:relative;background:#22251f;border:1px solid #6d7068;border-radius:8px}
+.bigKey .base{position:absolute;left:90px;right:90px;bottom:28px;height:30px;background:#10120f;border:2px solid #777b70;border-radius:7px}
+.bigKey .arm{position:absolute;left:135px;right:145px;bottom:70px;height:18px;background:#7f8277;border:2px solid #b9bcae;border-radius:9px;transform-origin:10% 50%}
+.bigKey .knob{position:absolute;right:-35px;top:-21px;width:62px;height:62px;border-radius:50%;background:#0f100e;border:4px solid #777b70}
+.bigKey.down .arm{transform:rotate(5deg)}
+.bigKey.dash-ready{box-shadow:inset 0 0 0 3px #b49a4a}
+.bigKey.dash-ready:after{content:"DASH";position:absolute;right:14px;top:12px;background:#b49a4a;color:#1d1a12;padding:5px 8px;border-radius:4px;font:bold 12px Arial;letter-spacing:1px}
+#morseObj.dash-ready{box-shadow:6px 8px 12px #0007, inset 0 0 0 3px #b49a4a}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.controls button{padding:10px 14px;min-height:44px;background:#23261f;color:#eee;border:1px solid #6b6e65;border-radius:5px}
+.controls .primary{background:#5d5635}
+.help{font-size:12px;color:#c6c9c0;margin-top:8px}.decoded{background:#e6dab8;color:#2a241b;border:1px solid #8f805d;padding:15px;line-height:1.5}
+.rxPanel{margin-top:16px;border:1px solid #777b70;background:#181a17;padding:14px}
+.rxMorse{min-height:65px;background:#f0e5c7;color:#28231b;padding:12px;border:1px solid #908263;font:18px Consolas,monospace;line-height:1.6;letter-spacing:1px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-start}
+.rxToken{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:54px;padding:6px 8px;border:1px solid #b2a27b;background:#faf4e3;border-radius:4px;white-space:nowrap}
+.rxToken .rxCode{line-height:1.1}
+.rxToken .rxLetterInput{margin-top:6px;width:34px;height:32px;text-align:center;text-transform:uppercase;font:bold 16px Arial,sans-serif;color:#2a241b;background:#fffaf0;border:1px solid #8f805d;border-radius:3px;padding:2px}
+.rxToken .rxLetterInput:focus{outline:2px solid #6e6244;outline-offset:1px}
+.rxToken.wordSep{min-width:auto;padding:8px 11px;background:#dfd2af;font-weight:bold;justify-content:center}
+.rxButtons{display:flex;gap:8px;margin-top:10px}.rxButtons button{padding:10px 12px;min-height:44px}
+.pad{width:100%;height:120px;background:#f2e8c9;color:#28231b;border:1px solid #8f805d;padding:12px;font:16px Consolas,monospace}
+.mapWrap{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:20px;align-items:start}
+.gridmap{width:100%;max-width:650px;aspect-ratio:1/1;background:#d8cca6;border:2px solid #746a50;position:relative;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(7,1fr)}
+.cell{border-right:1px solid #8e8468;border-bottom:1px solid #8e8468;position:relative;color:#7d745e;font:12px Arial;padding:4px}.cell.targetHint{background:#9f3e2b22}
+.cell.gunCell{background:#4e5d4824}
+.mapMarker{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:bold 24px Arial;color:#342d23}
+.enemyMarker{color:#7c261f}.gunMarker{color:#344d31}
+.north{position:absolute;right:12px;top:10px;color:#413a2d;font:bold 14px Arial;text-align:center}
+.north span{display:block;font-size:28px}.mapInfo{background:#eee3c5;color:#2a241b;border:1px solid #8d805f;padding:14px}
+.solutionBox{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.solutionBox input{width:100%;padding:10px;font:18px Arial}
+.solutionBox button{grid-column:1/-1;padding:11px;min-height:46px;background:#544d31;color:#fff;border:0}
+.progress{display:flex;gap:8px;margin-top:10px}.pip{width:24px;height:8px;background:#40382e}.pip.done{background:#9b8b4f}
+.modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.modeCard{border:2px solid #8f805d;background:#efe4c5;padding:20px;text-align:left;color:#2a241b;min-height:230px}
+.modeCard:hover{background:#f5ebcf}.modeCard h3{font-size:24px;margin-bottom:8px}.modeCard ul{padding-left:20px;line-height:1.55}
+.modeTag{font:12px Arial,sans-serif;letter-spacing:1.4px;color:#655b43}
+.paddleControls{display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.paddleControls button{min-height:78px;background:#1a1c18;color:#eee;border:1px solid #74786e;font:bold 18px Arial;border-radius:6px}
+.paddleControls button:active{background:#34372f}
+.veteranHelp,.cannonHelp{display:none}
+.rangeComputer{display:none;margin-top:14px;border:1px solid #8d805f;background:#d6c79e;padding:12px;text-align:center}
+.rangeComputerTitle{font:11px Arial,sans-serif;letter-spacing:1.5px;color:#5e553f;margin-bottom:8px}
+.dialAssembly{width:210px;height:210px;margin:8px auto 10px;position:relative;border-radius:50%;background:radial-gradient(circle,#c3b486 0 23%,#8d805d 24% 26%,#cab98a 27% 46%,#776b50 47% 49%,#b8a777 50% 72%,#625843 73% 75%,#302d25 76% 100%);box-shadow:inset 0 0 18px #0005,0 3px 7px #0003;user-select:none;touch-action:none}
+.dialPointer{position:absolute;left:50%;top:-3px;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:18px solid #6f271f;z-index:8;filter:drop-shadow(0 1px 1px #0005)}
+.dialRing{position:absolute;left:50%;top:50%;border-radius:50%;transform-origin:center;transition:transform .16s ease}
+.outerDial{width:184px;height:184px;margin-left:-92px;margin-top:-92px;border:2px solid #4f4939;background:#aa9a70aa}
+.innerDial{width:124px;height:124px;margin-left:-62px;margin-top:-62px;border:2px solid #5c533e;background:#cbb98aaa}
+.dialNumber{position:absolute;width:34px;height:34px;border-radius:50%;border:1px solid #615941;background:#e7d9b5;color:#2b261d;font:bold 15px Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;z-index:3}
+.outerDial .dialNumber{left:73px;top:73px;transform:rotate(calc(var(--i) * 51.428571deg)) translateY(-78px) rotate(calc(var(--i) * -51.428571deg))}
+.innerDial .dialNumber{left:43px;top:43px;width:34px;height:34px;transform:rotate(calc(var(--i) * 51.428571deg)) translateY(-49px) rotate(calc(var(--i) * -51.428571deg))}
+.dialNumber.selected{background:#6d5d39;color:#fff;border-color:#302a20}
+.rangeWindow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:86px;min-height:58px;background:#f1e7ca;color:#29231a;border:3px solid #5c5139;box-shadow:inset 0 2px 7px #0004;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px}
+.rangeWindow .label{position:static;opacity:1;background:none;color:#665b42;padding:0;font:9px Arial,sans-serif;letter-spacing:1px}
+.rangeWindow .value{font:bold 18px Consolas,monospace;line-height:1.15;margin-top:2px}
+.dialReadouts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.dialReadout{background:#eee3c5;border:1px solid #978763;padding:7px;font:12px Arial,sans-serif;color:#3d3628}
+.dialReadout strong{display:block;font:20px Consolas,monospace;margin-top:2px}
+.dialInstructions{font:11px Arial,sans-serif;color:#5d5440;line-height:1.4;margin-top:9px}
+.dialTurnButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.dialTurnButtons button{min-height:42px;background:#5e5540;color:#fff;border:1px solid #3f392c;border-radius:4px;font:12px Arial,sans-serif}
+.mathSheet{display:none;margin-top:14px;background:#f1e7c9;border:1px solid #8d805f;padding:14px;transform:rotate(-.5deg)}
+.mathFormula{text-align:center;font:bold 26px Georgia;margin:10px 0}
+h1,h2,h3{margin-top:0}.small{font:12px Arial;color:#5d5749}.dark .small{color:#bbb}
+.success{color:#d6d19c}.error{color:#efb0a8}
+\n@media (max-width:1100px){
+  #game{width:calc(100% - 10px);margin:5px auto}
+  .scene{height:650px}
+  .desk{left:36px;right:36px;bottom:34px;height:355px}
+  .objective{left:42px;top:24px;width:56%;max-width:560px}
+  .toast{right:42px;top:24px;width:34%;max-width:390px}
+  .book{left:4%;top:68px;width:29%;height:195px}
+  .morsebox{right:4%;top:74px;width:34%;height:205px}
+  .receiver{left:39%;top:98px;width:20%;height:130px}
+  .mapobj{left:20%;top:284px;width:41%;height:58px}
+  .paperstack{left:65%;top:292px;width:27%;height:54px}
+  .transmitWrap{grid-template-columns:minmax(0,1fr) 300px}
+  .modal{padding:24px}
+  .modeCard{min-height:210px}
+}
+@media (max-width:850px){
+  #game{width:100%;margin:0;border-left:0;border-right:0}
+  .scene{height:720px}
+  .objective{left:18px;right:18px;width:auto}
+  .toast{left:18px;right:18px;top:88px;width:auto;max-width:none}
+  .desk{left:18px;right:18px;bottom:24px;height:520px}
+  .book{left:5%;top:70px;width:42%;height:180px}
+  .morsebox{right:5%;top:70px;width:42%;height:190px}
+  .receiver{left:37%;top:275px;width:26%;height:125px}
+  .mapobj{left:7%;top:420px;width:50%;height:58px}
+  .paperstack{left:62%;top:425px;width:31%;height:54px}
+  .modeGrid{grid-template-columns:1fr}
+  .modeCard{min-height:0}
+  .logGrid{grid-template-columns:1fr}
+  .morseRef{columns:3}
+  .transmitWrap{grid-template-columns:1fr}
+  .mapWrap{grid-template-columns:1fr}
+  .mapInfo{max-width:none}
+  .solutionBox{grid-template-columns:1fr 1fr}
+  .modal{width:96%;max-height:92%;padding:20px 16px;border-width:5px}
+}
+@media (max-width:560px){
+  .topbar{align-items:flex-start}
+  .scene{height:820px}
+  .desk{height:610px}
+  .book{left:4%;top:64px;width:92%;height:155px}
+  .morsebox{left:4%;right:auto;top:240px;width:92%;height:180px}
+  .receiver{left:8%;top:440px;width:38%;height:115px}
+  .mapobj{left:4%;top:570px;width:55%;height:52px}
+  .paperstack{left:64%;top:570px;width:31%;height:52px}
+  .book:before{inset:20px 28px}
+  .morseRef{columns:2}
+  .paddleControls{grid-template-columns:1fr 1fr}
+  .paddleControls button{min-height:64px;font-size:16px}
+  .solutionBox{grid-template-columns:1fr}
+  .modal{width:98%;padding:18px 12px}
+  .close{position:sticky;float:right;top:4px}
+}
+
+@media (max-width:850px){.rxLayout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="topbar">
+    <div><strong>FORWARD SIGNALS</strong> <span class="status">— WWI escape-room prototype</span></div>
+    <div class="status" id="topStatus">Shift not authenticated</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="ambienceToggle" type="button">Recorded Battlefield: ON</button>
+      <button id="restart">Restart Mission</button>
+    </div>
+  </div>
+  <div class="modalShade" id="modeShade" style="display:flex">
+    <div class="modal">
+      <div class="paperTitle"><strong>SELECT OPERATOR EXPERIENCE</strong><br><span class="small">Same mission. Different level of assistance. Tablet players: landscape works best.</span></div>
+      <div class="modeGrid">
+        <button class="modeCard" id="chooseCannon" type="button">
+          <div class="modeTag">ASSISTED</div>
+          <h3>CANNON FODDER</h3>
+          <ul>
+            <li>Left control = dot</li>
+            <li>Right control = dash</li>
+            <li>No press timing required</li>
+            <li>Concentric safe-dial range computer</li>
+            <li>Type your own decoded letter under each Morse group</li>
+          </ul>
+        </button>
+        <button class="modeCard" id="chooseVeteran" type="button">
+          <div class="modeTag">MANUAL</div>
+          <h3>VETERAN</h3>
+          <ul>
+            <li>Spacebar / key uses press timing</li>
+            <li>Short press = dot, hold = dash</li>
+            <li>No range computer</li>
+            <li>Pythagorean theorem sheet supplied</li>
+          </ul>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="tentline"></div>
+    <div class="objective" id="objective">You have reported for the morning shift. Inspect the communications tent and contact Headquarters.</div>
+    <div class="toast" id="toast"></div>
+    <div class="desk">
+      <button class="object book" id="bookObj" aria-label="Communication log"></button>
+      <button class="object morsebox" id="morseObj" aria-label="Morse transmitter">
+        <span class="keybase"></span><span class="keyarm"><span class="keyknob"></span></span>
+      </button>
+      <button class="object receiver locked" id="receiverObj" aria-label="Signal receiver">
+        <span class="dial"></span><span class="lamp"></span>
+      </button>
+      <button class="object mapobj locked" id="mapObj" aria-label="Sector map"></button>
+      <button class="object paperstack" id="padObj" aria-label="Message pad"></button>
+    </div>
+  </div>
+
+  <div class="modalShade" id="bookShade">
+    <div class="modal">
+      <button class="close" data-close="bookShade">Close</button>
+      <div class="paperTitle"><strong>COMMUNICATION LOG</strong><br><span class="small">Forward Signals Section — Standing Orders</span></div>
+      <div class="logGrid">
+        <div>
+          <div class="note">
+            <h3>NOTICE TO SIGNALS PERSONNEL</h3>
+            <p>Enemy interception of wireless traffic has increased across this sector. Routine voice traffic is suspended.</p>
+            <p>Essential communications are to be passed by keyed Morse signal until further notice.</p>
+            <p><strong>At the start of each duty shift, authenticate with Headquarters using the current shift word.</strong></p>
+            <p style="text-align:center;font-size:27px;letter-spacing:6px;border:1px solid #8d805f;padding:10px"><strong>LARK</strong></p>
+          </div>
+          <h3 style="margin-top:18px">Station Directory</h3>
+          <table class="directory">
+            <tr><th>Station</th><th>Call Sign</th></tr>
+            <tr><td>Headquarters</td><td><strong>LARK</strong></td></tr>
+            <tr><td>Intelligence</td><td><strong>OWL</strong></td></tr>
+            <tr><td>Artillery Battery</td><td><strong>GUN</strong></td></tr>
+          </table>
+          <p class="small">Artillery firing solutions use the battery's facing as 0°. Angles increase clockwise in 45° steps.</p>
+        </div>
+        <div>
+          <h3>Morse Reference</h3>
+          <div class="morseRef">
+A .-<br>B -...<br>C -.-.<br>D -..<br>E .<br>F ..-.<br>G --.<br>H ....<br>I ..<br>J .---<br>K -.-<br>L .-..<br>M --<br>N -.<br>O ---<br>P .--.<br>Q --.-<br>R .-.<br>S ...<br>T -<br>U ..-<br>V ...-<br>W .--<br>X -..-<br>Y -.--<br>Z --..<br><br>
+0 -----<br>1 .----<br>2 ..---<br>3 ...--<br>4 ....-<br>5 .....<br>6 -....<br>7 --...<br>8 ---..<br>9 ----.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalShade" id="txShade">
+    <div class="modal dark">
+      <button class="close" data-close="txShade">Close</button>
+      <h2>Morse Transmitter</h2>
+      <div class="transmitWrap">
+        <div class="transmitterPanel">
+          <div class="small">OUTGOING KEYED SIGNAL</div>
+          <div class="signalWindow" id="txSignal">—</div>
+          <div class="bigKey" id="bigKey"><div class="base"></div><div class="arm"><div class="knob"></div></div></div>
+          <button id="keyButton" style="width:100%;padding:15px;min-height:58px;margin-top:10px;background:#171914;color:#eee;border:1px solid #72766b;touch-action:none;user-select:none">HOLD TELEGRAPH KEY (or SPACEBAR)</button>
+          <div class="paddleControls" id="paddleControls">
+            <button id="dotButton" type="button">LEFT — DOT ·</button>
+            <button id="dashButton" type="button">RIGHT — DASH −</button>
+          </div>
+          <div class="help veteranHelp" id="veteranHelp">Short press = dot. Hold ~0.42 sec = dash. As soon as you hold long enough, DASH appears and the key highlights. Pause ~1.2 sec = next letter.</div>
+          <div class="help cannonHelp" id="cannonHelp">Use LEFT for dot and RIGHT for dash. Keyboard: Left Arrow/A = dot, Right Arrow/D = dash.</div>
+          <div class="controls">
+            <button id="txLetterBreak">Next letter</button>
+            <button id="txBack">Delete last</button>
+            <button id="txClear">Clear</button>
+            <button class="primary" id="txSend">Transmit</button>
+          </div>
+        </div>
+        <div class="txSide">
+          <div id="txReply" class="txReplyBox"><div class="small">No transmission response yet.</div></div>
+          <button class="txBookButton" id="txBookToggle" type="button">Open Communication Log / Morse Reference</button>
+          <div class="txReference" id="txReference">
+            <h3 style="margin-bottom:8px">Communication Log — Quick Reference</h3>
+            <table class="stationMini">
+              <tr><th>Station</th><th>Call Sign</th></tr>
+              <tr><td>Headquarters</td><td><strong>LARK</strong></td></tr>
+              <tr><td>Intelligence</td><td><strong>OWL</strong></td></tr>
+              <tr><td>Artillery Battery</td><td><strong>GUN</strong></td></tr>
+            </table>
+            <div class="small" style="margin-bottom:8px">MORSE REFERENCE</div>
+            <div class="morseMini">
+              <span>A .-</span><span>B -...</span><span>C -.-.</span>
+              <span>D -..</span><span>E .</span><span>F ..-.</span>
+              <span>G --.</span><span>H ....</span><span>I ..</span>
+              <span>J .---</span><span>K -.-</span><span>L .-..</span>
+              <span>M --</span><span>N -.</span><span>O ---</span>
+              <span>P .--.</span><span>Q --.-</span><span>R .-.</span>
+              <span>S ...</span><span>T -</span><span>U ..-</span>
+              <span>V ...-</span><span>W .--</span><span>X -..-</span>
+              <span>Y -.--</span><span>Z --..</span>
+              <span>0 -----</span><span>1 .----</span><span>2 ..---</span>
+              <span>3 ...--</span><span>4 ....-</span><span>5 .....</span>
+              <span>6 -....</span><span>7 --...</span><span>8 ---..</span>
+              <span>9 ----.</span>
+            </div>
+          </div>
+          <div class="decoded">
+            <div class="small">OPERATOR'S CHECK</div>
+            <div style="font:22px Consolas,monospace;margin-top:8px" id="txDecoded">—</div>
+            <p class="small">This decoded preview is included for the prototype while we tune the Morse input. V1.2 uses slower, more forgiving timing and also adds a manual 'Next letter' button.</p>
+          </div>
+          <div class="fieldNote" id="firingNote">
+            <div class="noteHead">FIELD NOTE — FIRING DATA</div>
+            <div class="noteMain" id="firingNoteMain">No firing solution prepared.</div>
+            <div class="noteSend" id="firingNoteSend"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalShade" id="rxShade">
+    <div class="modal dark">
+      <button class="close" data-close="rxShade">Close</button>
+      <h2>Signal Receiver</h2>
+      <div class="rxLayout">
+        <div>
+          <div id="rxStation" class="small">NO TRAFFIC</div>
+          <div class="rxPanel">
+            <div class="small">RECEIVED MORSE — decode each group and type the letter directly underneath</div>
+            <div class="rxMorse" id="rxMorse"><span class="rxToken">—</span></div>
+            <div class="rxButtons">
+              <button id="playRx">Play / Replay Morse Audio</button>
+              <button id="slowerRx">Play Slower</button>
+            </div>
+          </div>
+          <div class="controls" style="margin-top:16px">
+            <button class="primary" id="submitDecode">Check Decoded Message</button>
+            <button id="clearDecode" type="button">Clear Letters</button>
+          </div>
+          <div id="decodeResult" style="margin-top:12px"></div>
+        </div>
+        <div class="rxSide">
+          <button class="rxBookButton" id="rxBookToggle" type="button">Open Communication Log / Morse Reference</button>
+          <div class="rxReference" id="rxReference">
+            <h3 style="margin-bottom:8px">Communication Log — Quick Reference</h3>
+            <table class="stationMini">
+              <tr><th>Station</th><th>Call Sign</th></tr>
+              <tr><td>Headquarters</td><td><strong>LARK</strong></td></tr>
+              <tr><td>Intelligence</td><td><strong>OWL</strong></td></tr>
+              <tr><td>Artillery Battery</td><td><strong>GUN</strong></td></tr>
+            </table>
+            <div class="small" style="margin-bottom:8px">MORSE REFERENCE</div>
+            <div class="morseMini">
+              <span>A .-</span><span>B -...</span><span>C -.-.</span>
+              <span>D -..</span><span>E .</span><span>F ..-.</span>
+              <span>G --.</span><span>H ....</span><span>I ..</span>
+              <span>J .---</span><span>K -.-</span><span>L .-..</span>
+              <span>M --</span><span>N -.</span><span>O ---</span>
+              <span>P .--.</span><span>Q --.-</span><span>R .-.</span>
+              <span>S ...</span><span>T -</span><span>U ..-</span>
+              <span>V ...-</span><span>W .--</span><span>X -..-</span>
+              <span>Y -.--</span><span>Z --..</span>
+              <span>0 -----</span><span>1 .----</span><span>2 ..---</span>
+              <span>3 ...--</span><span>4 ....-</span><span>5 .....</span>
+              <span>6 -....</span><span>7 --...</span><span>8 ---..</span>
+              <span>9 ----.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalShade" id="mapShade">
+    <div class="modal">
+      <button class="close" data-close="mapShade">Close</button>
+      <h2>Sector Map</h2>
+      <div class="mapWrap">
+        <div class="gridmap" id="gridmap"><div class="north"><span>↑</span>N / 0°</div></div>
+        <div class="mapInfo">
+          <h3>Battery Data</h3>
+          <p><strong>Battery position:</strong> D4</p>
+          <p><strong>Battery facing:</strong> North / 0°</p>
+          <p><strong>Scale:</strong> 1 grid = 100 yards</p>
+          <p><strong>Direction:</strong> 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315° relative to battery facing.</p>
+          <hr>
+          <div id="intelSummary">No current target decoded.</div>
+          <div class="rangeComputer" id="rangeComputer">
+            <div class="rangeComputerTitle">FIELD RANGE COMPUTER — Mk. I</div>
+            <div class="dialAssembly" id="dialAssembly" aria-label="Concentric field range calculator">
+              <div class="dialPointer" aria-hidden="true"></div>
+              <div class="dialRing outerDial" id="horizontalDial" aria-label="Horizontal offset wheel"></div>
+              <div class="dialRing innerDial" id="verticalDial" aria-label="Vertical offset wheel"></div>
+              <div class="rangeWindow">
+                <div class="label">RANGE</div>
+                <div class="value" id="rangeComputerOutput">0 YDS</div>
+              </div>
+            </div>
+            <div class="dialReadouts">
+              <div class="dialReadout">HORIZONTAL<strong id="horizontalValue">0</strong></div>
+              <div class="dialReadout">VERTICAL<strong id="verticalValue">0</strong></div>
+            </div>
+            <div class="dialTurnButtons">
+              <button type="button" id="horizontalNext">Turn HORIZONTAL +1</button>
+              <button type="button" id="verticalNext">Turn VERTICAL +1</button>
+            </div>
+            <div class="dialInstructions">Turn the outer wheel to the horizontal grid offset and the inner wheel to the vertical offset. Read the firing distance through the centre RANGE window. You can click a number on either wheel directly.</div>
+          </div>
+          <div class="mathSheet" id="mathSheet">
+            <div class="small">FIELD CALCULATION NOTE</div>
+            <div class="mathFormula">a² + b² = c²</div>
+            <p>Use horizontal and vertical grid offsets as <strong>a</strong> and <strong>b</strong>. Solve for <strong>c</strong>, then multiply by 100 yards per grid.</p>
+            <p class="small">Example: 3 across and 4 up → √(3² + 4²) = 5 grids → 500 yards.</p>
+          </div>
+          <div class="solutionBox">
+            <label>Angle °<input type="number" id="angleInput" step="45" min="0" max="315"></label>
+            <label>Range yd<input type="number" id="rangeInput" step="25" min="0"></label>
+            <button id="checkSolution">Prepare Firing Solution</button>
+          </div>
+          <div id="solutionResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalShade" id="padShade">
+    <div class="modal">
+      <button class="close" data-close="padShade">Close</button>
+      <h2>Message Pad</h2>
+      <div class="note" id="journal">No messages recorded yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const MORSE={
+A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',
+0:'-----',1:'.----',2:'..---',3:'...--',4:'....-',5:'.....',6:'-....',7:'--...',8:'---..',9:'----.'
+};
+const REV=Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+const targets=[
+ {grid:'D7',type:'ENEMY MACHINE GUN',angle:0,range:300,intel:'ENEMY MACHINE GUN OBSERVED GRID D7'},
+ {grid:'G7',type:'ENEMY INFANTRY',angle:45,range:425,intel:'ENEMY INFANTRY FORMING GRID G7'},
+ {grid:'A4',type:'HOSTILE POSITION',angle:270,range:300,intel:'HOSTILE POSITION OBSERVED GRID A4'}
+];
+let state, txGroups, currentRxText='', currentRxMorse='', keyDown=false, keyStart=0, dashTimer=null, dashCommitted=false, letterTimer=null, wordTimer=null, audioCtx=null, journal=[];
+let gameMode=null;
+let activeMorseNodes=[];
+let ambienceEnabled=true;
+let ambienceStarted=false;
+let ambienceDucked=false;
+let ambienceLoop=null;
+let ambienceTimers=[];
+let backgroundAudios=new Set();
+let oneShotAudios=new Set();
+
+const AUDIO_URLS={
+  warAmbience:'audio/battlefield.ogg',
+  gunshot:'audio/gunshot.mp3',
+  distantExplosion:'audio/distant_explosion.mp3',
+  cannonFire:'audio/cannon_fire.ogg',
+  cannonHit:'audio/cannon_hit.ogg',
+  cannonHitWall:'audio/cannon_hit_wall.ogg',
+  impactLayer:'audio/impact_explosion.ogg'
+};
+let rangeDialState={horizontal:0,vertical:0};
+const $=id=>document.getElementById(id);
+const MORSE_TIMING = {
+  dashThreshold: 420,
+  letterGap: 1200
+};
+
+function resetState(showMode=true){
+ stopMorsePlayback();
+ stopBattlefieldAmbience();
+ state={auth:false,hqRead:false,awaiting:'HQ_AUTH',targetIndex:0,intelDecoded:false,solutionReady:false,missionDone:false};
+ txGroups=[[]];
+ journal=[];
+ currentRxText=''; currentRxMorse='';
+ $('topStatus').textContent='Shift not authenticated';
+ $('objective').textContent='You have reported for the morning shift. Inspect the communications tent and contact Headquarters.';
+ $('receiverObj').classList.add('locked');
+ $('mapObj').classList.add('locked');
+ $('journal').textContent='No messages recorded yet.';
+ $('txReply').innerHTML='<div class="small">No transmission response yet.</div>';
+ $('toast').style.display='none';
+ clearFiringNote();
+ closeAll(); renderTx(); buildMap();
+ if(showMode){gameMode=null;$('modeShade').style.display='flex';}
+ else applyModeUI();
+}
+function closeAll(){document.querySelectorAll('.modalShade').forEach(x=>x.style.display='none')}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{
+ if(b.dataset.close==='rxShade')stopMorsePlayback();
+ $(b.dataset.close).style.display='none';
+}));
+$('ambienceToggle').addEventListener('click',()=>{
+ ambienceEnabled=!ambienceEnabled;
+ $('ambienceToggle').textContent='Recorded Battlefield: '+(ambienceEnabled?'ON':'OFF');
+ if(ambienceEnabled){
+   startBattlefieldAmbience();
+ }else{
+   stopBattlefieldAmbience();
+ }
+});
+$('restart').addEventListener('click',()=>{if(confirm('Restart Mission 1 and choose difficulty again?')) resetState(true)});
+$('bookObj').addEventListener('click',()=>open('bookShade'));
+$('morseObj').addEventListener('click',()=>open('txShade'));
+$('receiverObj').addEventListener('click',()=>{if(state.auth) openReceiver(); else toast('The receiver is silent. Authenticate with HQ first.')});
+$('mapObj').addEventListener('click',()=>{if(state.intelDecoded) openMap(); else toast('You do not yet have a current enemy grid.')});
+$('padObj').addEventListener('click',()=>openJournal());
+function open(id){$(id).style.display='flex'}
+function chooseMode(mode){
+ gameMode=mode;
+ $('modeShade').style.display='none';
+ startBattlefieldAmbience();
+ applyModeUI();
+ $('topStatus').textContent=(mode==='cannon'?'CANNON FODDER':'VETERAN')+' — Shift not authenticated';
+ toast(mode==='cannon'?'Cannon Fodder selected — assisted Morse controls and range computer enabled.':'Veteran selected — timed Morse and manual range maths enabled.');
+}
+function applyModeUI(){
+ if(!gameMode)return;
+ const cannon=gameMode==='cannon';
+ $('paddleControls').style.display=cannon?'grid':'none';
+ $('keyButton').style.display=cannon?'none':'block';
+ $('cannonHelp').style.display=cannon?'block':'none';
+ $('veteranHelp').style.display=cannon?'none':'block';
+ $('rangeComputer').style.display=cannon?'block':'none';
+ $('mathSheet').style.display=cannon?'none':'block';
+}
+$('chooseCannon').addEventListener('click',()=>chooseMode('cannon'));
+$('chooseVeteran').addEventListener('click',()=>chooseMode('veteran'));
+function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3500)}
+
+function textToMorse(text){
+ return text.toUpperCase().split(' ').map(word=>word.split('').map(ch=>MORSE[ch]||'').filter(Boolean).join(' ')).join(' / ');
+}
+function renderRxMorse(code){
+ const container=$('rxMorse');
+ if(!code){
+   container.innerHTML='<span class="rxToken"><span class="rxCode">—</span></span>';
+   return;
+ }
+ const tokens=code.trim().split(/\s+/);
+ let letterIndex=0;
+ container.innerHTML=tokens.map(tok=>{
+   if(tok==='/') return '<span class="rxToken wordSep">/</span>';
+   const safeTok=tok.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+   const idx=letterIndex++;
+   return '<span class="rxToken"><span class="rxCode">'+safeTok+'</span><input class="rxLetterInput" data-rx-index="'+idx+'" maxlength="1" autocomplete="off" aria-label="Decoded character '+(idx+1)+'"></span>';
+ }).join('');
+
+ const inputs=[...container.querySelectorAll('.rxLetterInput')];
+ inputs.forEach((input,i)=>{
+   input.addEventListener('input',()=>{
+     input.value=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,1);
+     if(input.value && inputs[i+1])inputs[i+1].focus();
+   });
+   input.addEventListener('keydown',e=>{
+     if(e.key==='Backspace' && !input.value && inputs[i-1]){
+       e.preventDefault();
+       inputs[i-1].focus();
+       inputs[i-1].value='';
+     }else if(e.key==='ArrowLeft' && inputs[i-1]){
+       e.preventDefault();
+       inputs[i-1].focus();
+     }else if(e.key==='ArrowRight' && inputs[i+1]){
+       e.preventDefault();
+       inputs[i+1].focus();
+     }
+   });
+ });
+}
+function normalize(s){return s.toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function addJournal(label,text){journal.push('<strong>'+label+'</strong><br>'+text);$('journal').innerHTML=journal.join('<hr>')}
+function showFiringNote(t){
+ const sendCode=String(t.angle).padStart(3,'0')+String(t.range);
+ $('firingNoteMain').innerHTML='ANGLE <strong>'+t.angle+'°</strong><br>RANGE <strong>'+t.range+' YDS</strong>';
+ $('firingNoteSend').textContent='SEND: '+sendCode;
+ $('firingNote').classList.add('show');
+}
+function clearFiringNote(){
+ $('firingNote').classList.remove('show');
+ $('firingNoteMain').textContent='No firing solution prepared.';
+ $('firingNoteSend').textContent='';
+}
+
+function renderTx(){
+ const sig=txGroups.map(g=>g.join('')).filter((x,i)=>x||i===txGroups.length-1).join(' / ');
+ $('txSignal').textContent=sig||'—';
+ const decoded=txGroups.map(g=>REV[g.join('')]||'?').join('');
+ $('txDecoded').textContent=decoded||'—';
+}
+function appendSymbol(s){
+ let g=txGroups[txGroups.length-1];
+ if(g.length>=5)return;
+ g.push(s); renderTx();
+ clearTimeout(letterTimer); clearTimeout(wordTimer);
+ letterTimer=setTimeout(()=>{ if(txGroups[txGroups.length-1].length){txGroups.push([]);renderTx()} },MORSE_TIMING.letterGap);
+ wordTimer=setTimeout(()=>{},1400);
+}
+function cannonSymbol(symbol){
+ if(gameMode!=='cannon')return;
+ $('bigKey').classList.add('down');
+ $('morseObj').classList.add('pressed');
+ if(symbol==='-'){$('bigKey').classList.add('dash-ready');$('morseObj').classList.add('dash-ready');}
+ tone(640,0.02,symbol==='.'?0.06:0.16);
+ appendSymbol(symbol);
+ setTimeout(()=>{
+  $('bigKey').classList.remove('down','dash-ready');
+  $('morseObj').classList.remove('pressed','dash-ready');
+ },140);
+}
+function down(e){
+ if(gameMode!=='veteran')return;
+ if(keyDown)return;
+ if(e && e.code && e.code!=='Space')return;
+ if(e && e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+ if(e)e.preventDefault();
+ keyDown=true;
+ dashCommitted=false;
+ keyStart=performance.now();
+ $('bigKey').classList.add('down');
+ $('morseObj').classList.add('pressed');
+ tone(640,0.08,0.03);
+ clearTimeout(dashTimer);
+ dashTimer=setTimeout(()=>{
+   if(!keyDown)return;
+   dashCommitted=true;
+   $('bigKey').classList.add('dash-ready');
+   $('morseObj').classList.add('dash-ready');
+   // Show the dash immediately while the key is still held.
+   let g=txGroups[txGroups.length-1];
+   if(g.length<5){
+     g.push('-');
+     renderTx();
+   }
+ },MORSE_TIMING.dashThreshold);
+}
+function up(e){
+ if(gameMode!=='veteran')return;
+ if(!keyDown)return;
+ if(e && e.code && e.code!=='Space')return;
+ if(e)e.preventDefault();
+ keyDown=false;
+ clearTimeout(dashTimer);
+ $('bigKey').classList.remove('down','dash-ready');
+ $('morseObj').classList.remove('pressed','dash-ready');
+ if(dashCommitted){
+   // Dash was already added when threshold was crossed.
+   clearTimeout(letterTimer); clearTimeout(wordTimer);
+   letterTimer=setTimeout(()=>{
+     if(txGroups[txGroups.length-1].length){
+       txGroups.push([]);
+       renderTx();
+     }
+   },MORSE_TIMING.letterGap);
+ } else {
+   appendSymbol('.');
+ }
+}
+$('keyButton').addEventListener('pointerdown',e=>{
+ if(gameMode!=='veteran')return;
+ try{e.currentTarget.setPointerCapture(e.pointerId)}catch(_){}
+ down(e);
+});
+$('keyButton').addEventListener('pointerup',up);
+$('keyButton').addEventListener('pointercancel',up);
+$('keyButton').addEventListener('lostpointercapture',e=>{if(keyDown)up(e)});
+window.addEventListener('keydown',e=>{
+ if($('txShade').style.display!=='flex' || e.repeat)return;
+
+ // Never steal normal typing from text fields, number fields, textareas,
+ // selects, or other editable elements.
+ const target=e.target;
+ const editing = target && (
+   target.tagName==='INPUT' ||
+   target.tagName==='TEXTAREA' ||
+   target.tagName==='SELECT' ||
+   target.isContentEditable
+ );
+ if(editing)return;
+
+ if(gameMode==='veteran' && e.code==='Space')down(e);
+ if(gameMode==='cannon' && (e.code==='ArrowLeft'||e.code==='KeyA')){e.preventDefault();cannonSymbol('.')}
+ if(gameMode==='cannon' && (e.code==='ArrowRight'||e.code==='KeyD')){e.preventDefault();cannonSymbol('-')}
+});
+window.addEventListener('keyup',e=>{if($('txShade').style.display==='flex' && gameMode==='veteran' && e.code==='Space')up(e)});
+$('dotButton').addEventListener('click',()=>cannonSymbol('.'));
+$('dashButton').addEventListener('click',()=>cannonSymbol('-'));
+$('txBookToggle').addEventListener('click',()=>{
+ const ref=$('txReference');
+ const opening=!ref.classList.contains('open');
+ ref.classList.toggle('open',opening);
+ $('txBookToggle').textContent=opening?'Close Communication Log / Morse Reference':'Open Communication Log / Morse Reference';
+});
+$('txClear').addEventListener('click',()=>{txGroups=[[]];renderTx();$('txReply').innerHTML=''});
+$('txLetterBreak').addEventListener('click',()=>{
+ clearTimeout(letterTimer); clearTimeout(wordTimer);
+ if(txGroups[txGroups.length-1].length){
+   txGroups.push([]);
+   renderTx();
+ }
+});
+$('txBack').addEventListener('click',()=>{
+ clearTimeout(letterTimer); clearTimeout(wordTimer);
+ while(txGroups.length>1 && txGroups[txGroups.length-1].length===0)txGroups.pop();
+ let g=txGroups[txGroups.length-1]; if(g.length)g.pop(); renderTx();
+});
+function decodedTx(){return txGroups.map(g=>REV[g.join('')]||'?').join('')}
+$('txSend').addEventListener('click',handleTransmit);
+
+function handleTransmit(){
+ clearTimeout(letterTimer);clearTimeout(wordTimer);
+ while(txGroups.length && txGroups[txGroups.length-1].length===0)txGroups.pop();
+ const msg=decodedTx();
+ const reply=$('txReply');
+ if(!msg || msg.includes('?')){reply.innerHTML='<div class="error">Transmission contains an incomplete or unrecognised Morse character.</div>';return}
+ if(state.awaiting==='HQ_AUTH'){
+   if(msg==='LARK'){
+     state.auth=true;state.awaiting='HQ_RX';
+     $('receiverObj').classList.remove('locked');$('topStatus').textContent='Shift authenticated — awaiting operational traffic';
+     reply.innerHTML='<div class="success"><strong>HQ:</strong> R R — LARK RECEIVED. STAND BY FOR TRAFFIC.</div>';
+     addJournal('OUTGOING TO HQ','LARK');
+     setTimeout(()=>receiveHQOrder(),900);
+   } else reply.innerHTML='<div class="error"><strong>HQ:</strong> NEGATIVE. AUTHENTICATION NOT RECOGNISED. REPEAT.</div>';
+ } else if(state.awaiting==='INTEL_CALL'){
+   if(msg==='OWL'){
+     reply.innerHTML='<div class="success"><strong>INTELLIGENCE:</strong> OWL ACKNOWLEDGES. STAND BY.</div>';
+     addJournal('OUTGOING TO INTELLIGENCE','OWL');
+     state.awaiting='INTEL_RX';
+     setTimeout(()=>receiveIntel(),800);
+   } else reply.innerHTML='<div class="error">No station acknowledges that call sign.</div>';
+ } else if(state.awaiting==='ARTY_CALL'){
+   if(msg==='GUN'){
+     reply.innerHTML='<div class="success"><strong>ARTILLERY:</strong> GUN ACKNOWLEDGES. SEND THREE-DIGIT ANGLE THEN RANGE.</div>';
+     addJournal('OUTGOING TO ARTILLERY','GUN');
+     state.awaiting='ARTY_SOLUTION';
+     txGroups=[[]];renderTx();
+   } else reply.innerHTML='<div class="error">No station acknowledges that call sign.</div>';
+ } else if(state.awaiting==='ARTY_SOLUTION'){
+   const t=targets[state.targetIndex];
+   const n=msg.replace(/^ANGLE/,'').replace(/RANGE/g,'').replace(/\D/g,' ');
+   const nums=n.trim().split(/\s+/).map(Number).filter(Number.isFinite);
+   const compact=msg.replace(/\D/g,'');
+   const canonical=String(t.angle).padStart(3,'0')+String(t.range);
+   const ok=(nums.includes(t.angle)&&nums.includes(t.range)) || compact===canonical;
+   if(ok){
+     reply.innerHTML='<div class="success"><strong>ARTILLERY:</strong> FIRING DATA RECEIVED. STAND BY.</div>';
+     addJournal('FIRING SOLUTION SENT','ANGLE '+t.angle+' / RANGE '+t.range+' YARDS');
+     state.awaiting='FIRE_RESULT';
+     setTimeout(()=>fireResult(),1100);
+   } else reply.innerHTML='<div class="error"><strong>ARTILLERY:</strong> NEGATIVE. FIRING DATA INVALID. CHECK SOLUTION AND REPEAT.</div>';
+ } else reply.innerHTML='<div class="small">No station is currently expecting a transmission.</div>';
+}
+function receiveHQOrder(){
+ const text='ENEMY TROOP MOVEMENT HAS INCREASED IN YOUR SECTOR. CONTACT INTELLIGENCE FOR CURRENT ENEMY POSITION. ON RECEIPT OF GRID CALCULATE FIRING SOLUTION AND TRANSMIT TO ARTILLERY.';
+ setRx('HEADQUARTERS',text);
+ addJournal('INCOMING FROM HQ — MORSE',textToMorse(text));
+ $('objective').textContent='Headquarters is transmitting operational orders. Receive and decode the Morse message.';
+ toast('Incoming traffic from Headquarters.');
+ state.hqRead=true;
+ setTimeout(()=>openReceiver(),250);
+}
+function receiveIntel(){
+ const t=targets[state.targetIndex];
+ setRx('INTELLIGENCE',t.intel);
+ addJournal('INCOMING FROM INTELLIGENCE — MORSE',textToMorse(t.intel));
+ $('objective').textContent='Intelligence is transmitting. Receive and decode the Morse message.';
+ toast('Incoming Morse traffic from Intelligence.');
+ openReceiver();
+}
+function setRx(station,text){
+ currentRxText=text;currentRxMorse=textToMorse(text);
+ $('rxStation').textContent='FROM: '+station;
+ renderRxMorse(currentRxMorse);
+ $('decodeResult').innerHTML='';
+ $('receiverObj').classList.add('active');
+ setTimeout(()=>$('receiverObj').classList.remove('active'),2000);
+}
+function openReceiver(){
+ open('rxShade');
+ if(currentRxMorse!=='')setTimeout(()=>playMorse(currentRxText,1),150);
+}
+$('rxBookToggle').addEventListener('click',()=>{
+ const ref=$('rxReference');
+ const opening=!ref.classList.contains('open');
+ ref.classList.toggle('open',opening);
+ $('rxBookToggle').textContent=opening?'Close Communication Log / Morse Reference':'Open Communication Log / Morse Reference';
+});
+$('playRx').addEventListener('click',()=>playMorse(currentRxText,1));
+$('slowerRx').addEventListener('click',()=>playMorse(currentRxText,1.45));
+
+function tone(freq,start,duration,trackMorse=false){
+ try{
+   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+   const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+   o.frequency.value=freq;o.type='sine';
+   g.gain.setValueAtTime(0.0001,audioCtx.currentTime+start);
+   g.gain.exponentialRampToValueAtTime(0.10,audioCtx.currentTime+start+0.01);
+   g.gain.setValueAtTime(0.10,audioCtx.currentTime+start+Math.max(.01,duration-.015));
+   g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+start+duration);
+   o.connect(g);g.connect(audioCtx.destination);
+   o.start(audioCtx.currentTime+start);
+   o.stop(audioCtx.currentTime+start+duration+.02);
+
+   if(trackMorse){
+     const item={o,g};
+     activeMorseNodes.push(item);
+     o.addEventListener('ended',()=>{
+       activeMorseNodes=activeMorseNodes.filter(n=>n!==item);
+       try{o.disconnect();g.disconnect();}catch(_){}
+       if(activeMorseNodes.length===0)restoreAmbience();
+     },{once:true});
+   }
+ }catch(e){}
+}
+
+function stopMorsePlayback(){
+ const nodes=activeMorseNodes.splice(0);
+ nodes.forEach(({o,g})=>{
+   try{
+     g.gain.cancelScheduledValues(audioCtx.currentTime);
+     g.gain.setValueAtTime(0.0001,audioCtx.currentTime);
+   }catch(_){}
+   try{o.stop();}catch(_){}
+   try{o.disconnect();g.disconnect();}catch(_){}
+ });
+ restoreAmbience();
+}
+function playMorse(text,speed){
+ if(!text)return;
+ stopMorsePlayback();
+ duckAmbience();
+ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+ let t=.05,unit=.09*speed;
+ for(const ch of text.toUpperCase()){
+   if(ch===' '){t+=unit*7;continue}
+   const m=MORSE[ch]; if(!m)continue;
+   for(const s of m){
+     const d=s==='.'?unit:unit*3;
+     tone(620,t,d,true);
+     t+=d+unit;
+   }
+   t+=unit*2;
+ }
+}
+function getInlineDecodedMessage(){
+ const codeTokens=currentRxMorse.trim().split(/\s+/);
+ const inputs=[...$('rxMorse').querySelectorAll('.rxLetterInput')];
+ let inputIndex=0;
+ const words=[''];
+ for(const tok of codeTokens){
+   if(tok==='/'){
+     words.push('');
+     continue;
+   }
+   words[words.length-1]+=(inputs[inputIndex]?.value||'').toUpperCase();
+   inputIndex++;
+ }
+ return words.join(' ').trim();
+}
+
+$('clearDecode').addEventListener('click',()=>{
+ const inputs=[...$('rxMorse').querySelectorAll('.rxLetterInput')];
+ inputs.forEach(i=>i.value='');
+ $('decodeResult').innerHTML='';
+ if(inputs[0])inputs[0].focus();
+});
+
+$('submitDecode').addEventListener('click',()=>{
+ const rawGuess=getInlineDecodedMessage();
+ const guess=normalize(rawGuess), expected=normalize(currentRxText);
+ const totalInputs=$('rxMorse').querySelectorAll('.rxLetterInput').length;
+ const filledInputs=[...$('rxMorse').querySelectorAll('.rxLetterInput')].filter(i=>i.value).length;
+
+ if(filledInputs<totalInputs){
+   $('decodeResult').innerHTML='<div class="error">Some Morse groups still need a decoded letter.</div>';
+   return;
+ }
+
+ if(state.awaiting==='HQ_RX'){
+   const enough=guess===expected || (guess.includes('CONTACT INTELLIGENCE') && guess.includes('ARTILLERY'));
+   if(enough){
+     stopMorsePlayback();
+     state.hqRead=true;state.awaiting='INTEL_CALL';
+     $('decodeResult').innerHTML='<div class="success">Orders understood and recorded.</div>';
+     addJournal('DECODED HQ ORDERS',rawGuess);
+     $('objective').textContent='HQ orders: contact Intelligence for the current enemy position.';
+   }else{
+     $('decodeResult').innerHTML='<div class="error">That does not yet capture HQ orders. Check the Morse reference and try again.</div>';
+   }
+   return;
+ }
+
+ if(state.awaiting!=='INTEL_RX'){
+   $('decodeResult').innerHTML='<div class="small">There is no report awaiting decoding.</div>';
+   return;
+ }
+
+ const enough=guess===expected || (guess.includes(targets[state.targetIndex].grid) && (guess.includes('ENEMY') || guess.includes('HOSTILE')));
+ if(enough){
+   stopMorsePlayback();
+   state.intelDecoded=true;state.awaiting='MAP';
+   $('mapObj').classList.remove('locked');
+   $('decodeResult').innerHTML='<div class="success">Message understood. Enemy grid recorded.</div>';
+   addJournal('DECODED INTELLIGENCE',rawGuess);
+   $('objective').textContent='Enemy grid obtained. Use the sector map to calculate a firing solution.';
+   buildMap();
+ }else{
+   $('decodeResult').innerHTML='<div class="error">That does not match the received report yet. Check the Morse reference and try again.</div>';
+ }
+});
+function buildMap(){
+ const g=$('gridmap');g.querySelectorAll('.cell').forEach(x=>x.remove());
+ const cols='ABCDEFG';
+ for(let r=7;r>=1;r--){
+   for(let c=0;c<7;c++){
+     const cell=document.createElement('div');cell.className='cell';const grid=cols[c]+r;cell.dataset.grid=grid;
+     cell.innerHTML='<span>'+grid+'</span>';
+     if(grid==='D4'){cell.classList.add('gunCell');cell.innerHTML+='<div class="mapMarker gunMarker">▲</div>'}
+     if(state && state.intelDecoded && grid===targets[state.targetIndex].grid){cell.classList.add('targetHint');cell.innerHTML+='<div class="mapMarker enemyMarker">✚</div>'}
+     g.appendChild(cell);
+   }
+ }
+}
+function gridOffsets(grid){
+ const cols='ABCDEFG';
+ return {horizontal:Math.abs(cols.indexOf(grid[0])-cols.indexOf('D')),vertical:Math.abs(Number(grid.slice(1))-4)};
+}
+function buildRangeDials(){
+ const makeNumbers=(id,type)=>{
+   const dial=$(id);
+   dial.innerHTML='';
+   for(let i=0;i<=6;i++){
+     const b=document.createElement('button');
+     b.type='button';
+     b.className='dialNumber';
+     b.style.setProperty('--i',i);
+     b.textContent=i;
+     b.dataset.value=i;
+     b.setAttribute('aria-label',(type==='horizontal'?'Horizontal':'Vertical')+' offset '+i);
+     b.addEventListener('click',e=>{
+       e.stopPropagation();
+       setRangeDial(type,i);
+     });
+     dial.appendChild(b);
+   }
+ };
+ makeNumbers('horizontalDial','horizontal');
+ makeNumbers('verticalDial','vertical');
+ updateRangeComputer();
+}
+function setRangeDial(type,value){
+ value=((Number(value)%7)+7)%7;
+ rangeDialState[type]=value;
+ updateRangeComputer();
+}
+function updateRangeComputer(){
+ const h=rangeDialState.horizontal,v=rangeDialState.vertical;
+ const step=360/7;
+ $('horizontalDial').style.transform='rotate('+(-h*step)+'deg)';
+ $('verticalDial').style.transform='rotate('+(-v*step)+'deg)';
+ $('horizontalValue').textContent=h;
+ $('verticalValue').textContent=v;
+ $('horizontalDial').querySelectorAll('.dialNumber').forEach(b=>b.classList.toggle('selected',Number(b.dataset.value)===h));
+ $('verticalDial').querySelectorAll('.dialNumber').forEach(b=>b.classList.toggle('selected',Number(b.dataset.value)===v));
+ const yd=Math.sqrt(v*v+h*h)*100;
+ const rounded=Math.round(yd/25)*25;
+ $('rangeComputerOutput').textContent=rounded+' YDS';
+}
+$('horizontalNext').addEventListener('click',()=>setRangeDial('horizontal',rangeDialState.horizontal+1));
+$('verticalNext').addEventListener('click',()=>setRangeDial('vertical',rangeDialState.vertical+1));
+function openMap(){
+ const t=targets[state.targetIndex];
+ $('intelSummary').innerHTML='<strong>Decoded Intel:</strong><br>'+t.intel;
+ $('angleInput').value='';$('rangeInput').value='';$('solutionResult').innerHTML='';
+ rangeDialState={horizontal:0,vertical:0};updateRangeComputer();
+ buildMap();applyModeUI();open('mapShade');
+}
+$('checkSolution').addEventListener('click',()=>{
+ if(!state.intelDecoded)return;
+ const t=targets[state.targetIndex];
+ if(gameMode==='cannon'){
+   const off=gridOffsets(t.grid),v=rangeDialState.vertical,h=rangeDialState.horizontal;
+   if(v!==off.vertical || h!==off.horizontal){
+     $('solutionResult').innerHTML='<div style="color:#8a3028">The range-computer wheels do not match the target offsets on the map yet.</div>';
+     return;
+   }
+ }
+ const a=Number($('angleInput').value),r=Number($('rangeInput').value);
+ if(a===t.angle && Math.abs(r-t.range)<=25){
+   state.solutionReady=true;state.awaiting='ARTY_CALL';
+   $('solutionResult').innerHTML='<div style="color:#365b32"><strong>Solution prepared:</strong> ANGLE '+t.angle+' / RANGE '+t.range+' YARDS.<br>Contact Artillery and transmit the firing solution. Send it as <strong>'+String(t.angle).padStart(3,'0')+String(t.range)+'</strong> (three-digit angle followed by range).</div>';
+   $('objective').textContent='Firing solution prepared. Contact Artillery and transmit it by Morse.';
+   showFiringNote(t);
+   addJournal('PREPARED FIRING SOLUTION','Target '+(state.targetIndex+1)+': '+t.grid+' → Angle '+t.angle+'°, Range '+t.range+' yd');
+ } else $('solutionResult').innerHTML='<div style="color:#8a3028">That solution does not place fire on the reported grid. Recheck direction and scale.</div>';
+});
+function fireResult(){
+ const t=targets[state.targetIndex];
+ playExplosion();
+ addJournal('ARTILLERY RESULT','TARGET '+(state.targetIndex+1)+' HIT — '+t.grid);
+ if(state.targetIndex<targets.length-1){
+   clearFiringNote();
+   state.targetIndex++;state.intelDecoded=false;state.solutionReady=false;state.awaiting='INTEL_CALL';
+   $('mapObj').classList.add('locked');
+   $('txReply').innerHTML='<div class="success"><strong>ARTILLERY:</strong> TARGET HIT. GOOD EFFECT.</div>';
+   $('objective').textContent='Target destroyed. Contact Intelligence for the next enemy position.';
+   $('topStatus').textContent='Target '+state.targetIndex+' of 3 destroyed';
+   txGroups=[[]];renderTx();
+ } else {
+   $('firingNoteSend').textContent=$('firingNoteSend').textContent+' — FIRED';
+   state.missionDone=true;state.awaiting='DONE';
+   $('txReply').innerHTML='<div class="success"><strong>ARTILLERY:</strong> TARGET HIT. GOOD EFFECT.<br><br><strong>HQ:</strong> ENEMY ADVANCE DISRUPTED. SECTOR SECURE. GOOD WORK. AWAIT FURTHER ORDERS.</div>';
+   $('objective').textContent='MISSION 1 COMPLETE — Enemy advance disrupted and sector secured.';
+   $('topStatus').textContent='MISSION 1 COMPLETE';
+   addJournal('HQ','ENEMY ADVANCE DISRUPTED. SECTOR SECURE. GOOD WORK. AWAIT FURTHER ORDERS.');
+ }
+}
+
+
+function removeTrackedAudio(set,audio){
+ set.delete(audio);
+ try{audio.pause()}catch(_){}
+ try{audio.src=''}catch(_){}
+}
+
+function playRemoteSfx(url,volume=1,playbackRate=1,set=oneShotAudios){
+ const a=new Audio(url);
+ a.preload='auto';
+ a.volume=Math.max(0,Math.min(1,volume));
+ a.playbackRate=playbackRate;
+ a.addEventListener('ended',()=>removeTrackedAudio(set,a),{once:true});
+ a.addEventListener('error',()=>removeTrackedAudio(set,a),{once:true});
+ set.add(a);
+ const p=a.play();
+ if(p && p.catch)p.catch(()=>removeTrackedAudio(set,a));
+ return a;
+}
+
+function effectiveBackgroundVolume(base){
+ return ambienceDucked ? base*.22 : base;
+}
+
+function playBackgroundSfx(url,baseVolume=.12,playbackRate=1){
+ if(!ambienceEnabled || !ambienceStarted)return null;
+ const a=playRemoteSfx(url,effectiveBackgroundVolume(baseVolume),playbackRate,backgroundAudios);
+ a._baseVolume=baseVolume;
+ return a;
+}
+
+function updateBackgroundVolumes(){
+ if(ambienceLoop){
+   ambienceLoop.volume=ambienceDucked ? .012 : .05;
+ }
+ backgroundAudios.forEach(a=>{
+   if(typeof a._baseVolume==='number'){
+     a.volume=Math.max(0,Math.min(1,effectiveBackgroundVolume(a._baseVolume)));
+   }
+ });
+}
+
+function startBattlefieldAmbience(){
+ if(!ambienceEnabled)return;
+ if(ambienceStarted){
+   updateBackgroundVolumes();
+   return;
+ }
+ ambienceStarted=true;
+ ambienceDucked=false;
+
+ ambienceLoop=new Audio(AUDIO_URLS.warAmbience);
+ ambienceLoop.loop=true;
+ ambienceLoop.preload='auto';
+ ambienceLoop.volume=.05;
+ ambienceLoop.addEventListener('error',()=>{
+   try{ambienceLoop.pause()}catch(_){}
+   ambienceLoop=null;
+ },{once:true});
+ const p=ambienceLoop.play();
+ if(p && p.catch)p.catch(()=>{});
+
+ scheduleRifleFire();
+ scheduleMachineGuns();
+ scheduleDistantBoom();
+ scheduleArtilleryCrack();
+}
+
+function stopBattlefieldAmbience(){
+ ambienceTimers.forEach(t=>clearTimeout(t));
+ ambienceTimers=[];
+ [...backgroundAudios].forEach(a=>removeTrackedAudio(backgroundAudios,a));
+ backgroundAudios.clear();
+ if(ambienceLoop){
+   try{ambienceLoop.pause();ambienceLoop.currentTime=0}catch(_){}
+   ambienceLoop=null;
+ }
+ ambienceStarted=false;
+ ambienceDucked=false;
+}
+
+function trackAmbienceTimer(fn,delay){
+ const timer=setTimeout(()=>{
+   ambienceTimers=ambienceTimers.filter(t=>t!==timer);
+   fn();
+ },delay);
+ ambienceTimers.push(timer);
+ return timer;
+}
+
+
+function distantRifleFire(){
+ if(!ambienceEnabled || !ambienceStarted)return;
+ const count=Math.random()<.72 ? 1 : 2;
+ let delay=0;
+ for(let i=0;i<count;i++){
+   trackAmbienceTimer(()=>{
+     if(ambienceEnabled && ambienceStarted){
+       const rate=.88+Math.random()*.18;
+       playBackgroundSfx(AUDIO_URLS.gunshot,.045+Math.random()*.018,rate);
+     }
+   },delay);
+   delay+=450+Math.random()*950;
+ }
+}
+
+function distantMachineGun(){
+ if(!ambienceEnabled || !ambienceStarted)return;
+
+ // Very distant, occasional burst.
+ // Lower volume and slightly slower playback make it feel farther away.
+ const shots=3+Math.floor(Math.random()*2);
+ let delay=0;
+ for(let i=0;i<shots;i++){
+   trackAmbienceTimer(()=>{
+     if(ambienceEnabled && ambienceStarted){
+       const rate=.88+Math.random()*.06;
+       const a=playBackgroundSfx(AUDIO_URLS.gunshot,.022+Math.random()*.008,rate);
+       if(a){
+         // HTMLAudio has no EQ here, so distance is faked mostly with
+         // volume, slower rate, and leaving it buried under the ambience bed.
+         a._baseVolume=.022+Math.random()*.008;
+       }
+     }
+   },delay);
+   delay+=150+Math.random()*90;
+ }
+}
+function distantBoom(){
+ playBackgroundSfx(AUDIO_URLS.distantExplosion,.12,.93+Math.random()*.1);
+}
+
+function distantArtilleryCrack(){
+ playBackgroundSfx(AUDIO_URLS.cannonFire,.105,.94+Math.random()*.08);
+}
+
+function queueAmbience(fn,minMs,maxMs){
+ if(!ambienceEnabled || !ambienceStarted)return;
+ const delay=minMs+Math.random()*(maxMs-minMs);
+ trackAmbienceTimer(()=>{
+   if(ambienceEnabled && ambienceStarted){
+     fn();
+     queueAmbience(fn,minMs,maxMs);
+   }
+ },delay);
+}
+
+function scheduleRifleFire(){queueAmbience(distantRifleFire,3000,8000)}
+function scheduleMachineGuns(){queueAmbience(distantMachineGun,40000,75000)}
+function scheduleDistantBoom(){queueAmbience(distantBoom,8500,18000)}
+function scheduleArtilleryCrack(){queueAmbience(distantArtilleryCrack,4500,11000)}
+
+function duckAmbience(){
+ ambienceDucked=true;
+ updateBackgroundVolumes();
+}
+
+function restoreAmbience(){
+ ambienceDucked=false;
+ updateBackgroundVolumes();
+}
+
+function playExplosion(){
+ try{
+   if(ambienceLoop)ambienceLoop.volume=.012;
+
+   playRemoteSfx(AUDIO_URLS.cannonFire,.52,.97);
+
+   const t=targets[state.targetIndex];
+   const flightDelay=Math.round(650 + t.range*1.25);
+
+   setTimeout(()=>{
+     const impact=Math.random()<.5 ? AUDIO_URLS.cannonHitWall : AUDIO_URLS.cannonHit;
+     playRemoteSfx(impact,.95,.96+Math.random()*.06);
+
+     setTimeout(()=>{
+       playRemoteSfx(AUDIO_URLS.impactLayer,.70,.95+Math.random()*.07);
+     },65);
+
+     setTimeout(()=>{
+       if(activeMorseNodes.length)duckAmbience();
+       else restoreAmbience();
+     },2600);
+   },flightDelay);
+ }catch(e){}
+}
+
+function openJournal(){$('journal').innerHTML=journal.length?journal.join('<hr>'):'No messages recorded yet.';open('padShade')}
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){
+   if(ambienceLoop)ambienceLoop.volume=0;
+   backgroundAudios.forEach(a=>{a.volume=0});
+ }else if(ambienceEnabled && ambienceStarted){
+   updateBackgroundVolumes();
+ }
+});
+
+buildRangeDials();
+resetState(true);
+})();
+</script>
+</body>
+</html>
