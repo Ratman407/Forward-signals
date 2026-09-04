@@ -1,0 +1,28 @@
+FORWARD SIGNALS — AUDIO SOURCES
+
+Battlefield ambience:
+Dragout - War sounds (cc0) (freesound)
+Author: Dragout
+License: CC0 1.0
+Source:
+https://commons.wikimedia.org/wiki/File:Dragout_-_War_sounds_(cc0)_(freesound).ogg
+
+Gunshot / rifle sample and distant explosion:
+OpenGameArt sound assets used by the current Forward Signals test mix.
+Direct files:
+https://opengameart.org/sites/default/files/gunshot_0.mp3
+https://opengameart.org/sites/default/files/explosion_distant_0.mp3
+
+Cannon fire and impacts:
+Battle at sea
+Author: Thimras
+License: CC0
+Source:
+https://opengameart.org/content/battle-at-sea
+
+Secondary explosion layer:
+Explosion-LS100155.ogg
+Author: Fg2
+License: Public domain
+Source:
+https://commons.wikimedia.org/wiki/File:Explosion-LS100155.ogg
